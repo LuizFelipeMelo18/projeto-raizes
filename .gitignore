@@ -1,0 +1,4 @@
+.local/
+.idea/
+postgresql-*-windows-x64-binaries.zip
+backend/.local/
