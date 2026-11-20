@@ -1,0 +1,6 @@
+package br.com.raizes.pedidos.domain;
+
+public enum StatusPedido {
+    AGUARDANDO_PAGAMENTO, PAGAMENTO_INDETERMINADO, EM_PREPARO, PRONTO, ENTREGUE,
+    PAGAMENTO_RECUSADO, PAGAMENTO_FALHOU, CANCELADO
+}

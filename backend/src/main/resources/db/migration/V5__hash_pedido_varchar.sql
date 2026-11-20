@@ -1,0 +1,1 @@
+ALTER TABLE pedido ALTER COLUMN hash_requisicao TYPE VARCHAR(64);

@@ -1,0 +1,1 @@
+ALTER TABLE pagamento ALTER COLUMN cenario_mock TYPE VARCHAR(32);
