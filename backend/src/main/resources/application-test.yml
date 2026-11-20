@@ -1,0 +1,7 @@
+spring:
+  datasource:
+    url: ${TEST_DB_URL:jdbc:postgresql://localhost:5432/raizes_test}
+    username: ${TEST_DB_USERNAME:raizes_app}
+    password: ${TEST_DB_PASSWORD}
+  flyway:
+    locations: classpath:db/migration,classpath:db/demo

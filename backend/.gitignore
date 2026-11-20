@@ -1,0 +1,9 @@
+target/
+.env
+.env.*
+!.env.example
+*.log
+.idea/
+*.iml
+.mvn/wrapper/dists/
+.mvn/local-repository/

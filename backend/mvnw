@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+BASE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+VERSION=3.9.16
+if [ -n "${MAVEN_HOME:-}" ] && [ -x "$MAVEN_HOME/bin/mvn" ]; then
+  exec "$MAVEN_HOME/bin/mvn" "$@"
+fi
+for candidate in "$HOME"/.m2/wrapper/dists/apache-maven-$VERSION/*/bin/mvn; do
+  if [ -x "$candidate" ]; then exec "$candidate" "$@"; fi
+done
+LOCAL_MAVEN="$BASE_DIR/.mvn/wrapper/dists/apache-maven-$VERSION/apache-maven-$VERSION/bin/mvn"
+if [ ! -x "$LOCAL_MAVEN" ]; then
+  ARCHIVE_DIR="$BASE_DIR/.mvn/wrapper/dists/apache-maven-$VERSION"
+  mkdir -p "$ARCHIVE_DIR"
+  URL=$(sed -n 's/^distributionUrl=//p' "$BASE_DIR/.mvn/wrapper/maven-wrapper.properties" | head -n 1)
+  case "$URL" in https://repo.maven.apache.org/*) ;; *) echo 'distributionUrl inválida' >&2; exit 1 ;; esac
+  curl -fsSL "$URL" -o "$ARCHIVE_DIR/maven.zip"
+  unzip -q "$ARCHIVE_DIR/maven.zip" -d "$ARCHIVE_DIR"
+fi
+exec "$LOCAL_MAVEN" "$@"
