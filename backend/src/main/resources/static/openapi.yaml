@@ -1,0 +1,629 @@
+openapi: 3.0.3
+info:
+  title: Raízes do Nordeste - API
+  version: 0.7.0
+  description: Fluxo A executável com pagamento mock, reconciliação, estoque, estados, programa de fidelidade com consentimento LGPD, consulta de auditoria e relatório por unidade/canal. Sem cobrança real.
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/v1/produtos:
+    get:
+      summary: Listar produtos ativos sem preço global
+      description: Preço e disponibilidade dependem da unidade e aparecem no cardápio local.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Página de produtos ativos
+          content:
+            application/json:
+              example: {data: [{id: 10, nome: Sanduíche regional, ativo: true}], page: 1, limit: 20, totalItems: 3, totalPages: 1}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/estoque:
+    get:
+      summary: Consultar saldo físico, reservado e disponível por unidade
+      security: [{bearerAuth: []}]
+      description: GERENTE acessa somente sua unidade; ADMIN pode consultar qualquer unidade ativa.
+      parameters:
+        - in: query
+          name: unidadeId
+          required: true
+          schema: {type: integer, format: int64, minimum: 1}
+        - in: query
+          name: produtoId
+          schema: {type: integer, format: int64, minimum: 1}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Página de saldos da unidade
+          content:
+            application/json:
+              example: {data: [{unidadeId: 1, produtoId: 10, fisico: 30, reservado: 0, disponivel: 30}], page: 1, limit: 20, totalItems: 1, totalPages: 1}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/estoque/movimentacoes:
+    get:
+      summary: Listar movimentos da unidade
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: query
+          name: unidadeId
+          required: true
+          schema: {type: integer, format: int64, minimum: 1}
+        - in: query
+          name: produtoId
+          schema: {type: integer, format: int64, minimum: 1}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Página ordenada por data e ID decrescentes
+          content:
+            application/json:
+              example: {data: [{movimentoId: 8001, unidadeId: 1, produtoId: 10, pedidoId: null, tipo: ENTRADA, quantidade: 10, motivo: Reposição local, criadoEm: '2026-11-20T17:00:00Z'}], page: 1, limit: 20, totalItems: 1, totalPages: 1}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+    post:
+      summary: Registrar entrada ou saída manual na unidade
+      description: Somente GERENTE da unidade ou ADMIN. RESERVA, LIBERACAO e BAIXA são operações internas do fluxo de pedido.
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: {unidadeId: 1, produtoId: 10, tipo: ENTRADA, quantidade: 10, motivo: Reposição local}
+      responses:
+        '201':
+          description: Movimento e saldo resultante
+          content:
+            application/json:
+              example: {movimentoId: 8001, unidadeId: 1, produtoId: 10, tipo: ENTRADA, quantidade: 10, saldo: {unidadeId: 1, produtoId: 10, fisico: 40, reservado: 0, disponivel: 40}, criadoEm: '2026-11-20T17:00:00Z'}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/clientes:
+    post:
+      summary: Cadastrar cliente, sempre com perfil CLIENTE
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: {nome: Ana Souza, email: ana@example.invalid, senha: 'SenhaForte@123', consentimentoFidelidade: false}
+      responses:
+        '201':
+          description: Cliente cadastrado sem exposição do hash
+          content:
+            application/json:
+              example: {id: 109, nome: Ana Souza, email: ana@example.invalid, perfil: CLIENTE, consentimentoFidelidade: false}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/auth/login:
+    post:
+      summary: Trocar email e senha por JWT de uma hora
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: {email: cliente@raizes.invalid, senha: 'Demo@1234'}
+      responses:
+        '200':
+          description: Token assinado e perfil ativo
+          content:
+            application/json:
+              example: {accessToken: '<jwt>', tokenType: Bearer, expiresIn: 3600, user: {id: 100, nome: Cliente de demonstração, perfil: CLIENTE, unidadeId: null}}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/usuarios/me:
+    get:
+      summary: Consultar perfil próprio e registrar acesso a dados pessoais
+      security: [{bearerAuth: []}]
+      responses:
+        '200':
+          description: Perfil próprio
+          content:
+            application/json:
+              example: {id: 100, nome: Cliente de demonstração, email: cliente@raizes.invalid, perfil: CLIENTE, unidadeId: null, consentimentoFidelidade: false}
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/usuarios/me/consentimentos/fidelidade:
+    put:
+      summary: Registrar escolha ou revogação de consentimento de fidelidade
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: {consentido: true}
+      responses:
+        '200':
+          description: Evento de consentimento registrado
+          content:
+            application/json:
+              example: {consentido: true, versaoTexto: v1, registradoEm: '2026-11-20T17:00:00Z'}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/fidelidade/consentimento:
+    get:
+      summary: Consultar estado vigente do consentimento de fidelidade do cliente autenticado
+      security: [{bearerAuth: []}]
+      responses:
+        '200':
+          description: Estado atual do consentimento para a finalidade FIDELIDADE
+          content:
+            application/json:
+              example: {consentido: true, versaoTexto: v1, registradoEm: '2026-11-20T17:00:00Z'}
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    put:
+      summary: Conceder ou revogar consentimento de fidelidade do cliente autenticado
+      description: Somente CLIENTE. Revogação impede acúmulo futuro (inclusive de pedidos em preparo ainda não entregues) e impede novos resgates.
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: {consentido: true}
+      responses:
+        '200':
+          description: Evento de consentimento persistido e auditado
+          content:
+            application/json:
+              example: {consentido: true, versaoTexto: v1, registradoEm: '2026-11-20T17:00:00Z'}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/fidelidade/saldo:
+    get:
+      summary: Consultar saldo de fidelidade, reconciliação por movimentos e regras vigentes
+      description: Somente CLIENTE (autorização por titular do token). Taxa de acúmulo = 1 ponto por R$ 1,00 inteiro pago quando o pedido chega a ENTREGUE; resgate em blocos de 100 pontos = R$ 5,00, limitado a 50% do subtotal dos itens.
+      security: [{bearerAuth: []}]
+      responses:
+        '200':
+          description: Saldo atual explicado pela soma dos movimentos persistidos
+          content:
+            application/json:
+              example:
+                clienteId: 100
+                consentimentoAtivo: true
+                saldo: 53
+                totalAcumulado: 153
+                totalResgatado: 100
+                totalEstornado: 0
+                saldoCalculadoMovimentos: 53
+                saldoConsistente: true
+                regras: {pontosPorRealEntregue: 1, blocoResgatePontos: 100, descontoPorBloco: 5.00, limitePercentualSubtotal: 0.50}
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/fidelidade/movimentacoes:
+    get:
+      summary: Listar histórico paginado de movimentos de fidelidade do cliente autenticado
+      description: Somente CLIENTE. Movimentos ACUMULO (+), RESGATE (-) e ESTORNO_RESGATE (+) ordenados por data e ID decrescentes.
+      security: [{bearerAuth: []}]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Página de movimentações de pontos
+          content:
+            application/json:
+              example:
+                data: [{movimentoId: 1, pedidoId: 9001, tipo: ACUMULO, pontos: 119, variacaoSaldo: 119, saldoApos: 119, criadoEm: '2026-11-20T18:10:00Z'}]
+                page: 1
+                limit: 20
+                totalItems: 1
+                totalPages: 1
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/pedidos:
+    post:
+      summary: Criar pedido com preço local congelado, eventual resgate de fidelidade e reserva atômica de estoque
+      description: CLIENTE usa APP, WEB ou PICKUP; TOTEM usa TOTEM; ATENDENTE usa BALCAO ou PICKUP. Equipe e dispositivo somente na própria unidade. Cliente anônimo é permitido nos canais TOTEM e BALCAO e não participa da fidelidade. pontosResgate opcional (múltiplo de 100; 100 pontos = R$ 5,00; máximo 50% do subtotal) exige CLIENTE com consentimento ativo e saldo disponível. A mesma chave e conteúdo retorna o mesmo pedido com 200; conteúdo diferente retorna 409.
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: {type: string, format: uuid}
+          description: UUID único por tentativa de criação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: {unidadeId: 1, canalPedido: APP, modalidadeAtendimento: RETIRADA, formaPagamento: MOCK, pontosResgate: 100, itens: [{produtoId: 10, quantidade: 2}]}
+      responses:
+        '201':
+          description: Pedido persistido, itens com preço copiado, eventual resgate debitado e estoque reservado. O código de acompanhamento aparece somente para pedido anônimo.
+          headers:
+            Location: {schema: {type: string}, description: Rota de detalhe protegida}
+            Idempotency-Replayed: {schema: {type: boolean}, description: false na criação}
+          content:
+            application/json:
+              example: {pedidoId: 9001, unidadeId: 1, canalPedido: APP, modalidadeAtendimento: RETIRADA, status: AGUARDANDO_PAGAMENTO, subtotalItens: 79.80, descontoFidelidade: 5.00, pontosResgatados: 100, participaFidelidade: true, total: 74.80, itens: [{produtoId: 10, quantidade: 2, precoUnitario: 39.90, subtotal: 79.80}], criadoEm: '2026-11-20T18:00:00Z', codigoAcompanhamento: null}
+        '200': {description: Repetição idempotente da criação; mesmo pedido e Idempotency-Replayed true}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+    get:
+      summary: Listar pedidos do cliente ou da unidade com filtros e paginação
+      description: CLIENTE vê somente os próprios; equipe vê somente sua unidade; ADMIN pode filtrar qualquer unidade. TOTEM não lista pedidos.
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: query
+          name: unidadeId
+          schema: {type: integer, format: int64, minimum: 1}
+        - in: query
+          name: canalPedido
+          schema: {type: string, enum: [APP, TOTEM, BALCAO, PICKUP, WEB]}
+        - in: query
+          name: status
+          schema: {type: string, enum: [AGUARDANDO_PAGAMENTO, PAGAMENTO_INDETERMINADO, EM_PREPARO, PRONTO, ENTREGUE, PAGAMENTO_RECUSADO, PAGAMENTO_FALHOU, CANCELADO]}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Página filtrada, sem dados pessoais ou código anônimo
+          content:
+            application/json:
+              example: {data: [{pedidoId: 9001, unidadeId: 1, canalPedido: APP, modalidadeAtendimento: RETIRADA, status: AGUARDANDO_PAGAMENTO, total: 79.80, criadoEm: '2026-11-20T18:00:00Z'}], page: 1, limit: 20, totalItems: 1, totalPages: 1}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/pedidos/acompanhar/{codigo}:
+    get:
+      summary: Acompanhar estado de pedido anônimo por código aleatório
+      description: Responde somente status e instante; código de 144 bits é entregue na criação e não aparece em listagem.
+      parameters:
+        - in: path
+          name: codigo
+          required: true
+          schema: {type: string, minLength: 24, maxLength: 24}
+      responses:
+        '200':
+          description: Estado sem dados pessoais
+          content:
+            application/json:
+              example: {status: AGUARDANDO_PAGAMENTO, atualizadoEm: '2026-11-20T18:00:00Z'}
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/pedidos/{id}/pagamentos:
+    post:
+      summary: Registrar tentativa e solicitar pagamento ao gateway mock
+      description: CLIENTE dono, TOTEM criador ou ATENDENTE da unidade. A tentativa é persistida antes da chamada externa; a chamada ocorre fora da transação. Mesmo pedido, chave e cenário repetidos retornam o resultado salvo sem nova baixa ou liberação. Cenários INDETERMINADO_APROVAR e INDETERMINADO_RECUSAR permitem demonstrar reconciliação; FALHA_TECNICA e INDETERMINADO_PENDENTE permanecem indeterminados até resultado externo conhecido.
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: integer, format: int64}
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: {cenarioMock: APROVAR}
+      responses:
+        '200':
+          description: Aprovação baixa a reserva e inicia preparo; recusa libera e encerra o pedido.
+          content:
+            application/json:
+              example: {pagamentoId: 7001, pedidoId: 9001, statusPagamento: APROVADO, statusPedido: EM_PREPARO, valor: 79.80, mensagem: Pagamento simulado aprovado., codigoMock: MOCK-OK, payloadGateway: '{"gateway":"mock","codigo":"MOCK-OK","estado":"APROVADO"}', criadoEm: '2026-11-20T18:00:00Z', respondidoEm: '2026-11-20T18:00:01Z'}
+        '202':
+          description: Resultado indeterminado ou tentativa ainda pendente; reserva mantida para reconciliação.
+          content:
+            application/json:
+              example: {pagamentoId: 7002, pedidoId: 9002, statusPagamento: INDETERMINADO, statusPedido: PAGAMENTO_INDETERMINADO, valor: 39.90, mensagem: Resultado indeterminado; reserva retida até reconciliação., codigoMock: MOCK-UNKNOWN, payloadGateway: '{"gateway":"mock","estado":"INDETERMINADO"}', criadoEm: '2026-11-20T18:00:00Z', respondidoEm: '2026-11-20T18:00:01Z'}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/pedidos/{id}/pagamentos/reconciliacao:
+    post:
+      summary: Consultar gateway mock e resolver pagamento indeterminado
+      description: GERENTE da unidade ou ADMIN. Aprovação baixa uma vez; recusa libera uma vez; resposta ainda indeterminada preserva a reserva. Uma nova consulta após resolução devolve o resultado persistido.
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: integer, format: int64}
+      responses:
+        '200': {description: Pagamento resolvido ou já resolvido, no mesmo formato de /pagamentos}
+        '202': {description: Gateway ainda não confirmou; reserva permanece retida}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/pedidos/{id}/status:
+    patch:
+      summary: Avançar pedido pago de preparo a pronto e entregue
+      description: COZINHA faz EM_PREPARO para PRONTO; ATENDENTE faz PRONTO para ENTREGUE; GERENTE da unidade e ADMIN podem executar ambas. Outra transição recebe 409.
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: integer, format: int64}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: {status: PRONTO}
+      responses:
+        '200':
+          description: Transição registrada e auditada
+          content:
+            application/json:
+              example: {pedidoId: 9001, statusAnterior: EM_PREPARO, status: PRONTO, reservaLiberada: false, atualizadoEm: '2026-11-20T18:10:00Z'}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/pedidos/{id}/cancelamento:
+    post:
+      summary: Cancelar pedido antes da primeira tentativa de pagamento
+      description: CLIENTE dono, TOTEM criador ou ATENDENTE da unidade; libera a reserva em uma transação. Tentativa existente impede cancelamento, inclusive quando o resultado é indeterminado.
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: integer, format: int64}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            example: {motivo: Desistência antes do pagamento}
+      responses:
+        '200':
+          description: Pedido cancelado, estoque liberado e evento auditado
+          content:
+            application/json:
+              example: {pedidoId: 9001, statusAnterior: AGUARDANDO_PAGAMENTO, status: CANCELADO, reservaLiberada: true, atualizadoEm: '2026-11-20T18:03:00Z'}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/auditoria:
+    get:
+      summary: Listar eventos de auditoria com escopo por unidade e filtros
+      description: GERENTE consulta somente eventos da própria unidade; ADMIN consulta qualquer unidade ou eventos globais. Não expõe senha, hash, JWT ou payload financeiro.
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: query
+          name: unidadeId
+          schema: {type: integer, format: int64, minimum: 1}
+        - in: query
+          name: acao
+          schema: {type: string}
+        - in: query
+          name: recurso
+          schema: {type: string}
+        - in: query
+          name: pedidoId
+          schema: {type: integer, format: int64, minimum: 1}
+        - in: query
+          name: atorId
+          schema: {type: integer, format: int64, minimum: 1}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Página de eventos de auditoria ordenada por data e ID decrescentes
+          content:
+            application/json:
+              example:
+                data: [{auditoriaId: 15, unidadeId: 1, pedidoId: 5, atorId: 102, sujeitoUsuarioId: 100, recurso: PEDIDO, acao: TRANSICAO_PEDIDO, resultado: ENTREGUE, requestId: 'c2f86b2c-1c7e-4b02-9a91-81a9f1d0e5b4', criadoEm: '2026-11-20T22:25:55Z'}]
+                page: 1
+                limit: 20
+                totalItems: 1
+                totalPages: 1
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/pedidos/relatorios/unidades-canais:
+    get:
+      summary: Relatório consolidado de pedidos agrupados por unidade e canal
+      description: GERENTE acessa somente sua unidade; ADMIN acessa visão global ou filtrada por unidadeId, canalPedido e status.
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: query
+          name: unidadeId
+          schema: {type: integer, format: int64, minimum: 1}
+        - in: query
+          name: canalPedido
+          schema: {type: string, enum: [APP, TOTEM, BALCAO, PICKUP, WEB]}
+        - in: query
+          name: status
+          schema: {type: string, enum: [AGUARDANDO_PAGAMENTO, PAGAMENTO_INDETERMINADO, EM_PREPARO, PRONTO, ENTREGUE, PAGAMENTO_RECUSADO, PAGAMENTO_FALHOU, CANCELADO]}
+      responses:
+        '200':
+          description: Totais gerais e agregação por unidade e canal
+          content:
+            application/json:
+              example:
+                unidadeFiltro: 1
+                canalFiltro: null
+                statusFiltro: null
+                totalPedidos: 8
+                subtotalItensTotal: 478.80
+                descontoFidelidadeTotal: 10.00
+                valorTotal: 468.80
+                pontosResgatadosTotal: 200
+                itens: [{unidadeId: 1, canalPedido: APP, quantidadePedidos: 8, subtotalItens: 478.80, descontoFidelidade: 10.00, valorTotal: 468.80, pontosResgatados: 200}]
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/pedidos/{id}:
+    get:
+      summary: Consultar pedido próprio ou da unidade autorizada
+      description: Cliente só vê pedido próprio (outro dono retorna 404). Equipe só vê a própria unidade (403). ADMIN tem visão global; TOTEM não consulta por esta rota.
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: integer, format: int64}
+      responses:
+        '200':
+          description: Pedido, itens, fidelidade e eventual pagamento mock
+          content:
+            application/json:
+              example: {pedidoId: 9101, unidadeId: 1, canalPedido: APP, modalidadeAtendimento: RETIRADA, status: AGUARDANDO_PAGAMENTO, subtotalItens: 39.90, descontoFidelidade: 0.00, pontosResgatados: 0, participaFidelidade: true, total: 39.90, itens: [{produtoId: 10, quantidade: 1, precoUnitario: 39.90, subtotal: 39.90}], pagamento: null, criadoEm: '2026-11-20T17:00:00Z'}
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/health:
+    get:
+      summary: Verificar aplicação e banco local
+      responses:
+        '200':
+          description: Aplicação e banco disponíveis
+          content:
+            application/json:
+              example: {status: UP, database: UP}
+        '503':
+          description: Banco indisponível
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+  /api/v1/unidades:
+    get:
+      summary: Listar unidades ativas
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Página de unidades
+          content:
+            application/json:
+              example:
+                data: [{id: 1, nome: Unidade Centro, ativa: true}]
+                page: 1
+                limit: 20
+                totalItems: 1
+                totalPages: 1
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/unidades/{id}/cardapio:
+    get:
+      summary: Consultar cardápio ativo por unidade
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: integer, format: int64}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Página de produtos com disponibilidade indicativa
+          content:
+            application/json:
+              example:
+                data: [{produtoId: 10, nome: Sanduíche regional, preco: 39.90, disponivel: true}]
+                page: 1
+                limit: 20
+                totalItems: 1
+                totalPages: 1
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Page:
+      in: query
+      name: page
+      schema: {type: integer, minimum: 1, default: 1}
+    Limit:
+      in: query
+      name: limit
+      schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+  responses:
+    BadRequest:
+      description: Requisição malformada
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    NotFound:
+      description: Recurso inexistente ou oculto ao cliente
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Unprocessable:
+      description: Campo inválido
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Unauthorized:
+      description: Credenciais ou token ausentes ou inválidos
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Forbidden:
+      description: Perfil ou unidade não autorizados
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Conflict:
+      description: Conflito de cadastro ou saldo/estado insuficiente
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+  schemas:
+    ApiError:
+      type: object
+      required: [error, message, details, timestamp, path, requestId]
+      properties:
+        error: {type: string}
+        message: {type: string}
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field: {type: string}
+              issue: {type: string}
+        timestamp: {type: string, format: date-time}
+        path: {type: string}
+        requestId: {type: string, format: uuid}

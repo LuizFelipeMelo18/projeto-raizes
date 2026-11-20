@@ -1,0 +1,1668 @@
+{
+  "info": {
+    "name": "Raízes do Nordeste — Fluxo A",
+    "_postman_id": "5d0b8947-e8bb-49ec-93b7-9c5b653068c1",
+    "description": "Coleção organizada em pastas (Auth, Produtos e Estoque, Pedidos, Pagamentos, Fidelidade, Auditoria e Relatórios, Erros) cobrindo os cenários T01..T18 do Plano de Testes contra o PostgreSQL local com a seed fictícia. PaymentGateway é mock; nenhuma cobrança real.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8080"
+    },
+    {
+      "key": "clienteToken",
+      "value": ""
+    },
+    {
+      "key": "cozinhaToken",
+      "value": ""
+    },
+    {
+      "key": "atendenteToken",
+      "value": ""
+    },
+    {
+      "key": "gerenteToken",
+      "value": ""
+    },
+    {
+      "key": "totemToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "T01 - Login cliente válido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "T01 - Login cliente válido",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"cliente@raizes.invalid\",\"senha\":\"Demo@1234\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T01 login cliente 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().user.perfil).to.eql('CLIENTE'); });",
+                  "pm.collectionVariables.set('clienteToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login cozinha",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Login cozinha",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"cozinha@raizes.invalid\",\"senha\":\"Demo@1234\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login cozinha 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('cozinhaToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login atendente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Login atendente",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"atendente@raizes.invalid\",\"senha\":\"Demo@1234\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login atendente 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('atendenteToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login gerente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Login gerente",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"gerente@raizes.invalid\",\"senha\":\"Demo@1234\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login gerente 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('gerenteToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login totem",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Login totem",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"totem@raizes.invalid\",\"senha\":\"Demo@1234\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login totem 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('totemToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Produtos e Estoque",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/health",
+            "description": "Health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('health UP', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('UP'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T02 - Consultar cardápio da unidade 1",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/unidades/1/cardapio?page=1&limit=20",
+            "description": "T02 - Consultar cardápio da unidade 1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T02 cardapio unidade 1', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().totalItems).to.eql(3); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar entrada de estoque para o roteiro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{gerenteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/estoque/movimentacoes",
+            "description": "Registrar entrada de estoque para o roteiro",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"unidadeId\":1,\"produtoId\":10,\"tipo\":\"ENTRADA\",\"quantidade\":10,\"motivo\":\"Reposicao plano de testes\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('entrada estoque 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Pedidos",
+      "item": [
+        {
+          "name": "Conceder consentimento inicial de fidelidade",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/fidelidade/consentimento",
+            "description": "Conceder consentimento inicial de fidelidade",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"consentido\":true}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('consentido true', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().consentido).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T03 - Criar pedido válido no APP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{chaveCriacaoAprovado}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos",
+            "description": "T03 - Criar pedido válido no APP",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"unidadeId\":1,\"canalPedido\":\"APP\",\"modalidadeAtendimento\":\"RETIRADA\",\"formaPagamento\":\"MOCK\",\"itens\":[{\"produtoId\":10,\"quantidade\":3}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('chaveCriacaoAprovado', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T03 pedido criado 201', () => { pm.response.to.have.status(201); pm.expect(pm.response.json().status).to.eql('AGUARDANDO_PAGAMENTO'); pm.expect(pm.response.json().total).to.eql(119.7); });",
+                  "pm.collectionVariables.set('pedidoAprovado', pm.response.json().pedidoId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar pedido para recusa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{chaveCriacaoRecusado}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos",
+            "description": "Criar pedido para recusa",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"unidadeId\":1,\"canalPedido\":\"APP\",\"modalidadeAtendimento\":\"RETIRADA\",\"formaPagamento\":\"MOCK\",\"itens\":[{\"produtoId\":10,\"quantidade\":1}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('chaveCriacaoRecusado', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pedido para recusa 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('pedidoRecusado', pm.response.json().pedidoId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar pedido para reconciliação",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{chaveCriacaoIncerto}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos",
+            "description": "Criar pedido para reconciliação",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"unidadeId\":1,\"canalPedido\":\"APP\",\"modalidadeAtendimento\":\"RETIRADA\",\"formaPagamento\":\"MOCK\",\"itens\":[{\"produtoId\":10,\"quantidade\":1}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('chaveCriacaoIncerto', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pedido para reconciliacao 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('pedidoIncerto', pm.response.json().pedidoId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar pedido para cancelamento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{chaveCriacaoCancelar}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos",
+            "description": "Criar pedido para cancelamento",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"unidadeId\":1,\"canalPedido\":\"APP\",\"modalidadeAtendimento\":\"RETIRADA\",\"formaPagamento\":\"MOCK\",\"itens\":[{\"produtoId\":10,\"quantidade\":1}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('chaveCriacaoCancelar', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pedido para cancelamento 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('pedidoCancelar', pm.response.json().pedidoId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancelar antes de pagar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos/{{pedidoCancelar}}/cancelamento",
+            "description": "Cancelar antes de pagar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"motivo\":\"Desistencia antes do pagamento\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('cancelado 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().reservaLiberada).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Criar pedido anônimo no totem",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{totemToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{chaveCriacaoAnonimo}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos",
+            "description": "Criar pedido anônimo no totem",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"unidadeId\":1,\"canalPedido\":\"TOTEM\",\"modalidadeAtendimento\":\"CONSUMO_LOCAL\",\"formaPagamento\":\"MOCK\",\"itens\":[{\"produtoId\":11,\"quantidade\":1}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('chaveCriacaoAnonimo', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pedido anonimo 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('codigoAnonimo', pm.response.json().codigoAcompanhamento);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Acompanhar pedido anônimo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos/acompanhar/{{codigoAnonimo}}",
+            "description": "Acompanhar pedido anônimo"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('acompanhar anonimo 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('AGUARDANDO_PAGAMENTO'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Pagamentos",
+      "item": [
+        {
+          "name": "T04 - Aprovar pagamento mock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{chavePagamentoAprovado}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos/{{pedidoAprovado}}/pagamentos",
+            "description": "T04 - Aprovar pagamento mock",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"cenarioMock\":\"APROVAR\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('chavePagamentoAprovado', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T04 pagamento aprovado 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().statusPagamento).to.eql('APROVADO'); pm.expect(pm.response.json().statusPedido).to.eql('EM_PREPARO'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar pedido aprovado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos/{{pedidoAprovado}}",
+            "description": "Consultar pedido aprovado"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pedido aprovado EM_PREPARO', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('EM_PREPARO'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T05 - Marcar pedido PRONTO",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{cozinhaToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos/{{pedidoAprovado}}/status",
+            "description": "T05 - Marcar pedido PRONTO",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"PRONTO\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T05 status PRONTO 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('PRONTO'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T06 - Marcar pedido ENTREGUE e acumular pontos",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{atendenteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos/{{pedidoAprovado}}/status",
+            "description": "T06 - Marcar pedido ENTREGUE e acumular pontos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"ENTREGUE\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T06 status ENTREGUE 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ENTREGUE'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T16 - Pagamento mock recusado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{chavePagamentoRecusado}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos/{{pedidoRecusado}}/pagamentos",
+            "description": "T16 - Pagamento mock recusado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"cenarioMock\":\"RECUSAR\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('chavePagamentoRecusado', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T16 pagamento recusado 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().statusPagamento).to.eql('RECUSADO'); pm.expect(pm.response.json().statusPedido).to.eql('PAGAMENTO_RECUSADO'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pagamento indeterminado (HTTP 202)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{chavePagamentoIncerto}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos/{{pedidoIncerto}}/pagamentos",
+            "description": "Pagamento indeterminado (HTTP 202)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"cenarioMock\":\"INDETERMINADO_RECUSAR\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('chavePagamentoIncerto', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pagamento indeterminado 202', () => { pm.response.to.have.status(202); pm.expect(pm.response.json().statusPedido).to.eql('PAGAMENTO_INDETERMINADO'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reconciliar pagamento indeterminado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{gerenteToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos/{{pedidoIncerto}}/pagamentos/reconciliacao",
+            "description": "Reconciliar pagamento indeterminado"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('reconciliacao 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().statusPagamento).to.eql('RECUSADO'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fidelidade",
+      "item": [
+        {
+          "name": "T07 - Consultar saldo de fidelidade após entrega",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/fidelidade/saldo",
+            "description": "T07 - Consultar saldo de fidelidade após entrega"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T07 saldo consistente >= 100', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().saldoConsistente).to.eql(true); pm.expect(pm.response.json().saldo).to.be.at.least(100); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T08 - Criar pedido com resgate de 100 pontos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{chaveCriacaoResgate}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos",
+            "description": "T08 - Criar pedido com resgate de 100 pontos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"unidadeId\":1,\"canalPedido\":\"APP\",\"modalidadeAtendimento\":\"RETIRADA\",\"formaPagamento\":\"MOCK\",\"pontosResgate\":100,\"itens\":[{\"produtoId\":10,\"quantidade\":1}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('chaveCriacaoResgate', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T08 pedido com desconto de R$ 5,00', () => { pm.response.to.have.status(201); pm.expect(pm.response.json().pontosResgatados).to.eql(100); pm.expect(pm.response.json().descontoFidelidade).to.eql(5.0); pm.expect(pm.response.json().total).to.eql(34.9); });",
+                  "pm.collectionVariables.set('pedidoResgate', pm.response.json().pedidoId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Recusar pagamento do pedido com resgate e estornar pontos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{chavePagamentoResgate}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos/{{pedidoResgate}}/pagamentos",
+            "description": "Recusar pagamento do pedido com resgate e estornar pontos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"cenarioMock\":\"RECUSAR\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('chavePagamentoResgate', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estorno de pontos em recusa 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().statusPedido).to.eql('PAGAMENTO_RECUSADO'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar histórico de fidelidade",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/fidelidade/movimentacoes?page=1&limit=20",
+            "description": "Consultar histórico de fidelidade"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('historico de movimentos 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().totalItems).to.be.at.least(3); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Revogar consentimento de fidelidade",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/fidelidade/consentimento",
+            "description": "Revogar consentimento de fidelidade",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"consentido\":false}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('consentimento revogado 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().consentido).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reativar consentimento de fidelidade",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/fidelidade/consentimento",
+            "description": "Reativar consentimento de fidelidade",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"consentido\":true}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('consentimento reativado 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().consentido).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auditoria e Relatórios",
+      "item": [
+        {
+          "name": "T09 - Listar pedidos filtrando por canal e status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos?canalPedido=APP&status=ENTREGUE&page=1&limit=20",
+            "description": "T09 - Listar pedidos filtrando por canal e status"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T09 filtro por canal e status 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().totalItems).to.be.at.least(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T17 - Consultar trilha de auditoria da unidade",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{gerenteToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auditoria?unidadeId=1&recurso=PEDIDO&page=1&limit=20",
+            "description": "T17 - Consultar trilha de auditoria da unidade"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T17 auditoria paginada 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().totalItems).to.be.at.least(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T18 - Relatório de pedidos por unidade e canal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{gerenteToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos/relatorios/unidades-canais?unidadeId=1",
+            "description": "T18 - Relatório de pedidos por unidade e canal"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T18 relatorio por unidade e canal 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().totalPedidos).to.be.at.least(1); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Erros",
+      "item": [
+        {
+          "name": "T10 - Acesso sem token (401)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos/{{pedidoAprovado}}",
+            "description": "T10 - Acesso sem token (401)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T10 401 NAO_AUTENTICADO', () => { pm.response.to.have.status(401); pm.expect(pm.response.json().error).to.eql('NAO_AUTENTICADO'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T11 - Perfil sem permissão (403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auditoria",
+            "description": "T11 - Perfil sem permissão (403)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T11 403 ACESSO_NEGADO', () => { pm.response.to.have.status(403); pm.expect(pm.response.json().error).to.eql('ACESSO_NEGADO'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T12 - Campo obrigatório canalPedido ausente (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{chaveErroCanal}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos",
+            "description": "T12 - Campo obrigatório canalPedido ausente (422)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"unidadeId\":1,\"modalidadeAtendimento\":\"RETIRADA\",\"formaPagamento\":\"MOCK\",\"itens\":[{\"produtoId\":10,\"quantidade\":1}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('chaveErroCanal', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T12 422 CANAL_PEDIDO_INVALIDO', () => { pm.response.to.have.status(422); pm.expect(pm.response.json().error).to.eql('CANAL_PEDIDO_INVALIDO'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T13 - Formato de e-mail e quantidade inválidos (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{chaveErroQuantidade}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos",
+            "description": "T13 - Formato de e-mail e quantidade inválidos (422)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"unidadeId\":1,\"canalPedido\":\"APP\",\"modalidadeAtendimento\":\"RETIRADA\",\"formaPagamento\":\"MOCK\",\"itens\":[{\"produtoId\":10,\"quantidade\":-2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('chaveErroQuantidade', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T13 422 ITEM_INVALIDO', () => { pm.response.to.have.status(422); pm.expect(pm.response.json().error).to.eql('ITEM_INVALIDO'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T14 - Pedido em unidade inexistente (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{chaveErroUnidade}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos",
+            "description": "T14 - Pedido em unidade inexistente (404)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"unidadeId\":999,\"canalPedido\":\"APP\",\"modalidadeAtendimento\":\"RETIRADA\",\"formaPagamento\":\"MOCK\",\"itens\":[{\"produtoId\":10,\"quantidade\":1}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('chaveErroUnidade', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T14 404 UNIDADE_NAO_ENCONTRADA', () => { pm.response.to.have.status(404); pm.expect(pm.response.json().error).to.eql('UNIDADE_NAO_ENCONTRADA'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "T15 - Pedido com estoque insuficiente (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{chaveErroEstoque}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/pedidos",
+            "description": "T15 - Pedido com estoque insuficiente (409)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"unidadeId\":1,\"canalPedido\":\"APP\",\"modalidadeAtendimento\":\"RETIRADA\",\"formaPagamento\":\"MOCK\",\"itens\":[{\"produtoId\":10,\"quantidade\":999}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('chaveErroEstoque', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('T15 409 ESTOQUE_INSUFICIENTE', () => { pm.response.to.have.status(409); pm.expect(pm.response.json().error).to.eql('ESTOQUE_INSUFICIENTE'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
