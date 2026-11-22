@@ -78,7 +78,7 @@ Com a API iniciada, verifique [a saúde da aplicação](http://localhost:8080/ap
 ## Documentação e links
 
 - **Repositório Git público:** [LuizFelipeMelo18/projeto-raizes](https://github.com/LuizFelipeMelo18/projeto-raizes).
-- **Swagger público:** [luizfelipemelo18.github.io/projeto-raizes](https://luizfelipemelo18.github.io/projeto-raizes/) — disponível após ativar GitHub Pages na branch `main`, pasta `/(root)`.
+- **Swagger público:** [luizfelipemelo18.github.io/projeto-raizes](https://luizfelipemelo18.github.io/projeto-raizes/).
 - **Swagger local:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html). Inicie a API antes de abrir o link.
 - **OpenAPI local:** [http://localhost:8080/openapi.yaml](http://localhost:8080/openapi.yaml); o arquivo também está [neste repositório](backend/src/main/resources/static/openapi.yaml).
 - **Coleção Postman:** [arquivo JSON neste repositório](backend/postman/raizes-fluxo-a.postman_collection.json).
