@@ -943,7 +943,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('T16 pagamento recusado 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().statusPagamento).to.eql('RECUSADO'); pm.expect(pm.response.json().statusPedido).to.eql('PAGAMENTO_RECUSADO'); });"
+                  "pm.test('T16 pagamento recusado 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().statusPagamento).to.eql('RECUSADO'); pm.expect(pm.response.json().statusPedido).to.eql('CANCELADO'); });"
                 ]
               }
             }
@@ -1172,7 +1172,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('estorno de pontos em recusa 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().statusPedido).to.eql('PAGAMENTO_RECUSADO'); });"
+                  "pm.test('estorno de pontos em recusa 200', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().statusPedido).to.eql('CANCELADO'); });"
                 ]
               }
             }
@@ -1498,7 +1498,7 @@
           ]
         },
         {
-          "name": "T13 - Formato de e-mail e quantidade inválidos (422)",
+      "name": "T13 - Quantidade inválida (422)",
           "request": {
             "method": "POST",
             "header": [
@@ -1520,7 +1520,7 @@
               }
             ],
             "url": "{{baseUrl}}/api/v1/pedidos",
-            "description": "T13 - Formato de e-mail e quantidade inválidos (422)",
+            "description": "T13 - Quantidade inválida (422)",
             "body": {
               "mode": "raw",
               "raw": "{\"unidadeId\":1,\"canalPedido\":\"APP\",\"modalidadeAtendimento\":\"RETIRADA\",\"formaPagamento\":\"MOCK\",\"itens\":[{\"produtoId\":10,\"quantidade\":-2}]}",

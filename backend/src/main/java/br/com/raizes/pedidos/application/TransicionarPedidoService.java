@@ -78,7 +78,7 @@ public class TransicionarPedidoService {
         var quantidades = itens.findByPedidoIdOrderById(pedidoId).stream()
                 .collect(Collectors.toMap(i -> i.getProdutoId(), i -> i.getQuantidade()));
         estoque.liberar(pedido.getUnidadeId(), quantidades, pedidoId, ator.id());
-        pedido.mudarStatus(StatusPedido.CANCELADO);
+        pedido.cancelar(motivo == null || motivo.isBlank() ? "Cancelado pelo solicitante." : motivo.trim());
         fidelidade.devolverResgateSeAplicavel(pedido, ator.id(), requestId);
         auditoria.registrar(ator.id(), pedido.getClienteId(), pedidoId, pedido.getUnidadeId(),
                 "CANCELAMENTO_PEDIDO", "SUCESSO", "PEDIDO", requestId);

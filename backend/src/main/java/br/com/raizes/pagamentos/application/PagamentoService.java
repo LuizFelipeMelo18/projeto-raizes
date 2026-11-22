@@ -150,7 +150,7 @@ public class PagamentoService {
             }
             case RECUSADO -> {
                 estoque.liberar(pedido.getUnidadeId(), quantidades, pedidoId, atorId);
-                pedido.mudarStatus(StatusPedido.PAGAMENTO_RECUSADO);
+                pedido.cancelar("Pagamento simulado recusado.");
                 fidelidade.devolverResgateSeAplicavel(pedido, atorId, requestId);
             }
             case INDETERMINADO -> pedido.mudarStatus(StatusPedido.PAGAMENTO_INDETERMINADO);

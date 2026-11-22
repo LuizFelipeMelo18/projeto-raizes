@@ -68,7 +68,7 @@ public class ListarPedidosService {
         }
         var pedido = pedidos.findByCodigoAcompanhamento(codigo)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("PEDIDO_NAO_ENCONTRADO", "Pedido não encontrado."));
-        return new Acompanhamento(pedido.getStatus(), pedido.getAtualizadoEm());
+        return new Acompanhamento(pedido.getStatus(), pedido.getMotivoCancelamento(), pedido.getAtualizadoEm());
     }
 
     private static <E extends Enum<E>> E opcional(Class<E> tipo, String valor, String codigo) {
@@ -83,5 +83,5 @@ public class ListarPedidosService {
     public record Resumo(Long pedidoId, Long unidadeId, CanalPedido canalPedido,
                          ModalidadeAtendimento modalidadeAtendimento, StatusPedido status,
                          BigDecimal total, Instant criadoEm) { }
-    public record Acompanhamento(StatusPedido status, Instant atualizadoEm) { }
+    public record Acompanhamento(StatusPedido status, String motivoCancelamento, Instant atualizadoEm) { }
 }

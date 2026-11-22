@@ -47,7 +47,7 @@ public class ConsultarPedidoService {
         return new PedidoDetalhe(pedido.getId(), pedido.getUnidadeId(), pedido.getCanalPedido(),
                 pedido.getModalidadeAtendimento(), pedido.getStatus(), pedido.getSubtotalItens(),
                 pedido.getDescontoFidelidade(), pedido.getPontosResgatados(), pedido.isParticipaFidelidade(),
-                pedido.getTotal(), produtos, pagamento, pedido.getCriadoEm());
+                pedido.getTotal(), produtos, pagamento, pedido.getMotivoCancelamento(), pedido.getCriadoEm());
     }
 
     private Item mapearItem(ItemPedidoEntity item) {
@@ -60,5 +60,6 @@ public class ConsultarPedidoService {
                                 ModalidadeAtendimento modalidadeAtendimento, StatusPedido status,
                                 BigDecimal subtotalItens, BigDecimal descontoFidelidade,
                                 int pontosResgatados, boolean participaFidelidade,
-                                BigDecimal total, List<Item> itens, Pagamento pagamento, Instant criadoEm) { }
+                                BigDecimal total, List<Item> itens, Pagamento pagamento,
+                                String motivoCancelamento, Instant criadoEm) { }
 }

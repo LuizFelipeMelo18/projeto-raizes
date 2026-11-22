@@ -61,7 +61,7 @@ public class ExpirarReservasService {
         var quantidades = itens.findByPedidoIdOrderById(id).stream()
                 .collect(Collectors.toMap(i -> i.getProdutoId(), i -> i.getQuantidade()));
         estoque.liberar(pedido.getUnidadeId(), quantidades, id, null);
-        pedido.mudarStatus(StatusPedido.CANCELADO);
+        pedido.cancelar("Reserva expirou sem tentativa de pagamento.");
         UUID requestId = UUID.randomUUID();
         fidelidade.devolverResgateSeAplicavel(pedido, null, requestId);
         auditoria.registrar(null, pedido.getClienteId(), id, pedido.getUnidadeId(),

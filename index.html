@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Raízes do Nordeste — Documentação da API</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.17.14/swagger-ui.css">
+  <style>
+    body { margin: 0; background: #fafafa; }
+    .notice { padding: 12px 20px; font: 14px/1.5 sans-serif; color: #153e32; background: #e9f3ee; }
+  </style>
+</head>
+<body>
+  <div class="notice">Documentação pública da API. Para executar requisições, inicie a aplicação localmente conforme o README do repositório.</div>
+  <div id="swagger-ui"></div>
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
+  <script>
+    window.addEventListener('load', function () {
+      SwaggerUIBundle({
+        url: './backend/src/main/resources/static/openapi.yaml',
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        supportedSubmitMethods: []
+      });
+    });
+  </script>
+</body>
+</html>

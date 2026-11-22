@@ -63,6 +63,8 @@ public class PedidoEntity {
     private Instant atualizadoEm;
     @Column(name = "reserva_expira_em")
     private Instant reservaExpiraEm;
+    @Column(name = "motivo_cancelamento", length = 200)
+    private String motivoCancelamento;
 
     protected PedidoEntity() {
     }
@@ -87,7 +89,7 @@ public class PedidoEntity {
         this.codigoAcompanhamento = codigoAcompanhamento;
         this.criadoEm = Instant.now();
         this.atualizadoEm = this.criadoEm;
-        this.reservaExpiraEm = this.criadoEm.plus(java.time.Duration.ofMinutes(30));
+        this.reservaExpiraEm = this.criadoEm.plus(java.time.Duration.ofMinutes(15));
     }
 
     public Long getId() { return id; }
@@ -98,6 +100,7 @@ public class PedidoEntity {
     public String getCodigoAcompanhamento() { return codigoAcompanhamento; }
     public Instant getAtualizadoEm() { return atualizadoEm; }
     public Instant getReservaExpiraEm() { return reservaExpiraEm; }
+    public String getMotivoCancelamento() { return motivoCancelamento; }
     public CanalPedido getCanalPedido() { return canalPedido; }
     public ModalidadeAtendimento getModalidadeAtendimento() { return modalidadeAtendimento; }
     public StatusPedido getStatus() { return status; }
@@ -108,7 +111,18 @@ public class PedidoEntity {
     public BigDecimal getSubtotalItens() { return total.add(descontoFidelidade); }
     public Instant getCriadoEm() { return criadoEm; }
     public void mudarStatus(StatusPedido novoStatus) {
+        if (novoStatus == StatusPedido.CANCELADO) {
+            throw new IllegalArgumentException("Cancelamento exige motivo.");
+        }
         this.status = novoStatus;
+        this.atualizadoEm = Instant.now();
+    }
+    public void cancelar(String motivo) {
+        if (motivo == null || motivo.isBlank() || motivo.length() > 200) {
+            throw new IllegalArgumentException("Motivo de cancelamento inválido.");
+        }
+        this.status = StatusPedido.CANCELADO;
+        this.motivoCancelamento = motivo;
         this.atualizadoEm = Instant.now();
     }
     public PedidoEscopo escopo() { return new PedidoEscopo(unidadeId, clienteId, criadoPorId); }

@@ -1,12 +1,38 @@
-# Etapa 02 — modelagem do Fluxo A
+# Modelagem do Fluxo A
 
-Base: matriz e decisões da etapa 01; roteiro Back-End, páginas físicas 5–13. Este documento é um **projeto de domínio e contratos para a tarefa 03**, não uma afirmação de implementação. Stack alvo: Java 21, Spring Boot 4.1.x, Maven, PostgreSQL local, Spring Security, JPA e Flyway; sem Docker/Testcontainers.
+Base: roteiro Back-End, páginas físicas 5–13. Este documento descreve o fluxo implementado e identifica regras mantidas apenas como proposta conceitual. Stack: Java 21, Spring Boot 4.1.x, Maven, PostgreSQL local, Spring Security, JPA e Flyway; sem Docker/Testcontainers.
 
-**Revisão da etapa 07:** resultado técnico indeterminado retém a reserva até reconciliação. A interface de pagamento e o histórico de eventos foram incorporados ao modelo abaixo; `PAGAMENTO_FALHOU` permanece no esquema como estado legado, sem nova transição para ele.
+Resultado técnico indeterminado retém a reserva até reconciliação. A interface de pagamento e o histórico de eventos integram o modelo abaixo; `PAGAMENTO_FALHOU` permanece no esquema como estado legado, sem nova transição para ele.
 
-**Revisão da etapa 08:** o programa de fidelização passou a integrar o fluxo executável. Consentimento específico (`CONSENTIMENTO`, finalidade `FIDELIDADE`) é registrado e revogável pelo `CLIENTE`; pedidos anônimos ou criados sem consentimento vigente não participam (`participa_fidelidade = false`, `pontos_resgatados = 0`). O saldo fica em `FIDELIDADE_CONTA` e é integralmente explicado pelos lançamentos de `FIDELIDADE_MOVIMENTO` (`ACUMULO`, `RESGATE`, `ESTORNO_RESGATE`), com unicidade por `(pedido_id, tipo)`. A taxa de acúmulo é **1 ponto por R\$ 1,00 inteiro pago** quando o pedido atinge `ENTREGUE` (e o consentimento permanece ativo); o resgate ocorre em **blocos de 100 pontos = R\$ 5,00** de desconto na criação de pedido posterior, limitado a **50% do subtotal dos itens**. Recusa de pagamento, cancelamento pré-pagamento ou expiração de reserva estornam automaticamente os pontos resgatados uma única vez.
+O programa de fidelização integra o fluxo executável. Consentimento específico (`CONSENTIMENTO`, finalidade `FIDELIDADE`) é registrado e revogável pelo `CLIENTE`; pedidos anônimos ou criados sem consentimento vigente não participam (`participa_fidelidade = false`, `pontos_resgatados = 0`). O saldo fica em `FIDELIDADE_CONTA` e é integralmente explicado pelos lançamentos de `FIDELIDADE_MOVIMENTO` (`ACUMULO`, `RESGATE`, `ESTORNO_RESGATE`), com unicidade por `(pedido_id, tipo)`. A taxa de acúmulo é **1 ponto por R\$ 1,00 inteiro pago** quando o pedido atinge `ENTREGUE` (e o consentimento permanece ativo); o resgate ocorre em **blocos de 100 pontos = R\$ 5,00** de desconto na criação de pedido posterior, limitado a **50% do subtotal dos itens**. Recusa de pagamento, cancelamento pré-pagamento ou expiração de reserva estornam automaticamente os pontos resgatados uma única vez.
 
-**Revisão da etapa 09:** a tabela `AUDITORIA` passou a registrar explicitamente `unidade_id` (`V11__auditoria_unidade_e_indices.sql`) junto a `ator_id`, `sujeito_usuario_id`, `pedido_id`, `recurso`, `acao`, `resultado`, `request_id` e `criado_em`, viabilizando consulta paginada e autorizada por unidade para `GERENTE` e global para `ADMIN` (`GET /api/v1/auditoria`), além do relatório consolidado de pedidos por unidade e canal (`GET /api/v1/pedidos/relatorios/unidades-canais`). Promoções/campanhas e governança LGPD (dados, finalidade, base legal considerada, consentimento e retenção/anonimização) estão especificadas nas seções 8 e 9 abaixo.
+A tabela `AUDITORIA` registra `unidade_id` (`V11__auditoria_unidade_e_indices.sql`) junto a `ator_id`, `sujeito_usuario_id`, `pedido_id`, `recurso`, `acao`, `resultado`, `request_id` e `criado_em`, viabilizando consulta paginada e autorizada por unidade para `GERENTE` e global para `ADMIN` (`GET /api/v1/auditoria`), além do relatório consolidado de pedidos por unidade e canal (`GET /api/v1/pedidos/relatorios/unidades-canais`). Promoções/campanhas e governança LGPD (dados, finalidade, base legal considerada, consentimento e retenção/anonimização) estão especificadas nas seções 8 e 9 abaixo.
+
+## Contexto, requisitos e prioridades
+
+A rede tem uma administração central e unidades operacionais com cardápio, preço e estoque próprios. `ADMIN` consulta todas as unidades; a equipe opera somente na unidade associada à sua conta. O pedido registra o canal de origem (`APP`, `TOTEM`, `BALCAO`, `PICKUP` ou `WEB`) para acompanhamento e consolidação, independentemente da modalidade de atendimento. A administração central é um papel de acesso; não foi criada uma entidade `MATRIZ` sem regra ou dado que a justificasse.
+
+| ID | Requisito funcional de Back-end | Situação e evidência |
+|---|---|---|
+| RF-01 | Cadastrar cliente, autenticar e aplicar perfis. | Implementado: `identidade`, JWT, BCrypt e autorização por papel/unidade. |
+| RF-02 | Consultar unidades, produtos e cardápio por unidade. | Implementado: catálogo paginado e preços/disponibilidade por unidade. Cadastro administrativo de unidades fica como evolução. |
+| RF-03 | Criar, listar e consultar pedidos com itens, valores, canal e modalidade. | Implementado: `pedidos`, filtro `canalPedido` e preço congelado no item. |
+| RF-04 | Avançar status e cancelar pedidos conforme regras. | Implementado: máquina de estados, motivo de cancelamento e auditoria. |
+| RF-05 | Controlar estoque próprio de cada unidade, entradas, saídas e indisponibilidade. | Implementado: saldo físico/reservado, movimentos e bloqueio de venda sem saldo. |
+| RF-06 | Solicitar pagamento externo simulado e registrar retorno ao canal. | Implementado: `PaymentGateway` mock, payloads, idempotência e reconciliação. Não há cobrança real. |
+| RF-07 | Acumular e resgatar pontos com consentimento específico. | Implementado: conta, movimentos, resgate e estorno; compras anônimas não participam. |
+| RF-08 | Aplicar promoções/campanhas. | Proposta conceitual na seção 9: vigência, escopo e precedência de descontos. |
+| RF-09 | Consultar trilha de auditoria e relatório por unidade/canal. | Implementado como apoio à rastreabilidade operacional. |
+
+| ID | Requisito não funcional | Tratamento |
+|---|---|---|
+| RNF-01 | Segurança e privacidade. | JWT, perfis, BCrypt, minimização de resposta, consentimento persistido e finalidade documentada. Anonimização é proposta, sem endpoint no MVP. |
+| RNF-02 | Desempenho em horários de pico. | Paginação, índices, consulta de saldos em lote e bloqueio transacional do estoque por produto/unidade. |
+| RNF-03 | Tolerância a falhas de pagamento. | Resposta incerta retorna 202, preserva reserva e exige reconciliação; chamada ao gateway fora da transação de banco. |
+| RNF-04 | Rastreabilidade. | `requestId`, auditoria de ações sensíveis, unidade, ator e pedido; listagem autorizada e relatório por canal. |
+| RNF-05 | Documentação e testabilidade. | OpenAPI/Swagger, migrations Flyway, seed, coleção Postman e testes JUnit de unidade/integração. |
+
+O Fluxo A foi priorizado para fechar uma transação de ponta a ponta com persistência, estoque, pagamento mock e estados verificáveis. Fidelidade, consentimento, auditoria e relatório foram incluídos porque conectam regras do caso à operação real. Campanhas e anonimização ficaram conceituais: exigem políticas adicionais e não são necessárias para demonstrar o fluxo crítico. Não há infraestrutura de alta disponibilidade ou pagamento real no escopo local.
 
 ## 1. Decisões fechadas para esta modelagem
 
@@ -16,7 +42,7 @@ Base: matriz e decisões da etapa 01; roteiro Back-End, páginas físicas 5–13
 | Estoque | Saldo é de **produto por unidade**. `disponivel = fisico - reservado`. Criar pedido reserva na mesma transação; aprovação converte reserva em baixa física; recusa, cancelamento antes do pagamento ou expiração sem tentativa libera reserva. Resultado indeterminado a mantém até reconciliação. | Nenhuma reserva supera o disponível; quantidade física e reservada nunca ficam negativas. |
 | Concorrência | Alterar saldos e pedido sob bloqueio transacional/versão, em ordem estável de produto. | Dois pedidos concorrentes não vendem a mesma última unidade. |
 | Pagamento | Porta `PaymentGateway` e adaptador mock, sem cobrança real. Uma tentativa por pedido, com chave de idempotência; a tentativa é persistida antes da chamada externa, feita sem transação de banco aberta. Respostas e consultas de reconciliação ficam em `PAGAMENTO_EVENTO`. | Mesmo par pedido/chave/payload repete resultado; chave reutilizada com payload diferente gera 409; duplicidade não baixa duas vezes. |
-| Estados | `AGUARDANDO_PAGAMENTO`, `PAGAMENTO_INDETERMINADO`, `EM_PREPARO`, `PRONTO`, `ENTREGUE`, `PAGAMENTO_RECUSADO`, `CANCELADO`. `PAGAMENTO_FALHOU` é legado. | Máquina de estados abaixo rejeita qualquer transição não listada. |
+| Estados | `AGUARDANDO_PAGAMENTO`, `PAGAMENTO_INDETERMINADO`, `EM_PREPARO`, `PRONTO`, `ENTREGUE`, `CANCELADO`. `PAGAMENTO_RECUSADO` e `PAGAMENTO_FALHOU` permanecem apenas como valores legados do esquema. | Máquina de estados abaixo rejeita qualquer transição não listada. |
 | Cancelamento | Permitido apenas enquanto `AGUARDANDO_PAGAMENTO` e antes de existir tentativa de pagamento. Não há estorno financeiro no MVP. | Cancelamento libera reserva; pedido pago não é cancelado por este contrato. |
 | Cliente sem cadastro | `cliente_id` pode ser nulo **somente** quando Atendente (`BALCAO`/`PICKUP`) ou Totem (`TOTEM`) cria o pedido com credencial própria. Cliente de App/Web/Pickup autenticado é vinculado ao usuário do token; o request nunca escolhe `clienteId`. | Compra presencial sem cadastro funciona; nenhum cliente consegue atribuir pedido a terceiro. Pedido anônimo ou sem consentimento não participa da fidelidade. |
 | Fidelidade e consentimento | Finalidade específica `FIDELIDADE`, opt-in explícito e revogável a qualquer momento pelo `CLIENTE`. Taxa de acúmulo: `floor(totalPago) × 1` ponto somente após `ENTREGUE`. Taxa de resgate: blocos de `100` pontos = `R$ 5,00` de desconto em pedido posterior. Limite de desconto: máximo de `50%` do subtotal dos itens (`total = subtotal - desconto > 0`). Recusa, cancelamento ou expiração geram `ESTORNO_RESGATE`. | Saldo em `fidelidade_conta` coincide sempre com `SUM(ACUMULO) - SUM(RESGATE) + SUM(ESTORNO_RESGATE)` em `fidelidade_movimento`; constraint `UNIQUE(pedido_id, tipo)` impede crédito ou estorno duplicado. |
@@ -24,7 +50,7 @@ Base: matriz e decisões da etapa 01; roteiro Back-End, páginas físicas 5–13
 | Preços | O servidor lê o preço do cardápio ativo da unidade e grava preço unitário e subtotal no item; total é soma dos subtotais. | Alteração posterior do cardápio não muda pedido existente. |
 | Acesso | JWT com papéis `CLIENTE`, `TOTEM`, `ATENDENTE`, `COZINHA`, `GERENTE`. No MVP, cada principal de equipe, inclusive Gerente, pertence a uma unidade; Cliente não pertence a unidade. | 401 sem token, 403 sem papel/unidade, sem exposição de dados de outros clientes. |
 
-Estas escolhas resolvem as propostas bloqueantes da etapa 01 para **esta modelagem**. Uma mudança futura exige atualizar conjuntamente DER, estados, diagramas, contratos e cenários de teste.
+Uma mudança futura exige atualizar conjuntamente DER, estados, diagramas, contratos e cenários de teste.
 
 ## 2. Casos de uso e atores
 
@@ -86,9 +112,9 @@ O Totem é um canal usado pelo Cliente e se autentica tecnicamente com papel `TO
 
 **Pós-condições:** pedido, itens, canal, modalidade, preços, pagamento e transições persistidos; estoque físico abatido uma vez; reserva zerada; dados de pagamento real inexistentes.
 
-**Exceções:** validação de campo/enum → 422; token ausente → 401; papel/canal/unidade indevidos → 403; unidade/produto/pedido ausente → 404; produto sem saldo ou transição inválida → 409; mock recusado → Pagamento `RECUSADO` + Pedido `PAGAMENTO_RECUSADO` + liberação da reserva (200); resposta técnica incerta → Pagamento `INDETERMINADO` + Pedido `PAGAMENTO_INDETERMINADO` + reserva retida (202), aguardando reconciliação. Repetição idempotente devolve o resultado persistido sem novo movimento.
+**Exceções:** validação de campo/enum → 422; token ausente → 401; papel/canal/unidade indevidos → 403; unidade/produto/pedido ausente → 404; produto sem saldo ou transição inválida → 409; mock recusado → Pagamento `RECUSADO` + Pedido `CANCELADO` com motivo + liberação da reserva (200); resposta técnica incerta → Pagamento `INDETERMINADO` + Pedido `PAGAMENTO_INDETERMINADO` + reserva retida (202), aguardando reconciliação. Repetição idempotente devolve o resultado persistido sem novo movimento.
 
-**Regras:** total calculado pelo servidor; um item por produto por pedido; uma tentativa de pagamento por pedido; nenhum novo pagamento após cancelamento/recusa; cancelamento só antes da tentativa; reserva sem tentativa expira em 30 minutos; reserva indeterminada não expira sem reconciliação; ações sensíveis geram auditoria; promoções e fidelidade são propostas conceituais fora do cálculo do MVP.
+**Regras:** total calculado pelo servidor; um item por produto por pedido; uma tentativa de pagamento por pedido; nenhum novo pagamento após cancelamento/recusa; cancelamento solicitado pelo cliente só antes da tentativa; reserva sem tentativa expira em 15 minutos; reserva indeterminada não expira sem reconciliação; ações sensíveis geram auditoria; promoções são propostas conceituais, enquanto fidelidade participa do cálculo implementado.
 
 ## 3. Estados do pedido
 
@@ -96,19 +122,18 @@ O Totem é um canal usado pelo Cliente e se autentica tecnicamente com papel `TO
 stateDiagram-v2
     [*] --> AGUARDANDO_PAGAMENTO: pedido criado / reserva
     AGUARDANDO_PAGAMENTO --> EM_PREPARO: mock aprovado / baixa
-    AGUARDANDO_PAGAMENTO --> PAGAMENTO_RECUSADO: mock recusado / libera reserva
+    AGUARDANDO_PAGAMENTO --> CANCELADO: mock recusado / registra motivo e libera reserva
     AGUARDANDO_PAGAMENTO --> PAGAMENTO_INDETERMINADO: resposta incerta / mantém reserva
     PAGAMENTO_INDETERMINADO --> EM_PREPARO: reconciliação aprovada / baixa
-    PAGAMENTO_INDETERMINADO --> PAGAMENTO_RECUSADO: reconciliação recusada / libera reserva
+    PAGAMENTO_INDETERMINADO --> CANCELADO: reconciliação recusada / registra motivo e libera reserva
     AGUARDANDO_PAGAMENTO --> CANCELADO: cancelar antes da tentativa / libera reserva
     EM_PREPARO --> PRONTO: Cozinha
     PRONTO --> ENTREGUE: Atendente
-    PAGAMENTO_RECUSADO --> [*]
     CANCELADO --> [*]
     ENTREGUE --> [*]
 ```
 
-`PAGAMENTO_RECUSADO`, `CANCELADO` e `ENTREGUE` são terminais. `PAGAMENTO_INDETERMINADO` só sai por reconciliação confirmada; `EM_PREPARO`/`PRONTO` não aceitam cancelamento no MVP, pois não há contrato de estorno. A transição de aprovação é executada pelo caso de uso de pagamento, nunca por `PATCH /status`.
+`CANCELADO` e `ENTREGUE` são terminais. `PAGAMENTO_INDETERMINADO` só sai por reconciliação confirmada; `EM_PREPARO`/`PRONTO` não aceitam cancelamento no MVP, pois não há contrato de estorno. A transição de aprovação é executada pelo caso de uso de pagamento, nunca por `PATCH /status`.
 
 ## 4. DER lógico do MVP
 
@@ -359,7 +384,7 @@ classDiagram
     Pedido "1" --> "0..*" FidelidadeMovimento
 ```
 
-`Money` representa BRL com escala 2, sem `double`. `Pedido` protege transições; `EstoqueSaldo` protege saldo; Application coordena as duas entidades e o pagamento.
+No código, valores monetários usam `BigDecimal` com escala 2. `PedidoEntity` e `EstoqueSaldoEntity` ficam na infraestrutura JPA; políticas de status, acesso, estoque e fidelidade ficam no domínio. O desenho acima é a visão conceitual das relações, não uma lista literal de classes Java.
 
 ## 6. Sequência do fluxo crítico
 
@@ -397,8 +422,8 @@ sequenceDiagram
     else Recusado
       Mock-->>Pagar: RECUSADO
       Pagar->>Estoque: liberar reserva
-      Pagar->>Repo: pagamento + liberação + PAGAMENTO_RECUSADO
-      API-->>Ator: 200 RECUSADO / PAGAMENTO_RECUSADO
+      Pagar->>Repo: pagamento + liberação + CANCELADO com motivo
+      API-->>Ator: 200 RECUSADO / CANCELADO
     else Resultado indeterminado
       Mock-->>Pagar: INDETERMINADO
       Pagar->>Repo: resposta + PAGAMENTO_INDETERMINADO; mantém reserva
@@ -411,7 +436,7 @@ sequenceDiagram
         API->>Repo: APROVADO + EM_PREPARO + evento
       else Reconciliação recusada
         API->>Estoque: liberar reserva uma vez
-        API->>Repo: RECUSADO + PAGAMENTO_RECUSADO + evento
+        API->>Repo: RECUSADO + CANCELADO com motivo + evento
       else Ainda indeterminado
         API->>Repo: evento; reserva mantida
       end
@@ -432,15 +457,16 @@ Os dois últimos passos só acontecem no ramo aprovado. Cada conclusão de pagam
 flowchart LR
     API["API<br/>Controllers, DTOs, validação de entrada,<br/>JWT/roles, OpenAPI, erro padrão"]
     APP["Application<br/>CriarPedido, SolicitarPagamento,<br/>CancelarPedido, AlterarStatus,<br/>ConsultarPedido, MovimentarEstoque"]
-    DOM["Domain<br/>Pedido, Item, EstoqueSaldo,<br/>estados, valores e invariantes"]
+    DOM["Domain<br/>estados, políticas de acesso,<br/>estoque e fidelidade"]
     INF["Infrastructure<br/>JPA/PostgreSQL, Flyway,<br/>GatewayMock, auditoria"]
     API --> APP
     APP --> DOM
-    APP --> PORTAS["Portas de repositório e pagamento"]
-    INF -. implementa .-> PORTAS
+    APP --> INF
+    APP --> PORTA["Porta PaymentGateway"]
+    INF -. implementa .-> PORTA
 ```
 
-O monólito se organiza por contexto (`identidade`, `catalogo`, `pedidos`, `pagamentos`, `estoque`, `fidelidade`, `auditoria`) e por camada dentro dos contextos ou em pacotes de camada equivalentes. API não contém regra de estoque/estado/fidelidade; Domain não conhece Spring ou JPA; Application orquestra transações e permissões de caso de uso; Infrastructure realiza persistência, migrations e simulação do gateway. A implementação preserva essas fronteiras.
+O monólito se organiza por contexto (`identidade`, `catalogo`, `pedidos`, `pagamentos`, `estoque`, `fidelidade`, `auditoria`) e por camada dentro de cada contexto. API não contém regra de estoque/estado/fidelidade; Domain não conhece Spring ou JPA; Application orquestra transações e permissões e usa diretamente entidades e repositórios JPA da Infrastructure. A integração de pagamento usa a porta `PaymentGateway` e um adaptador mock. Esta é uma arquitetura em camadas pragmática, sem inversão completa das dependências de persistência.
 
 ## 8. Governança LGPD, privacidade e segurança no Back-end
 
@@ -475,7 +501,7 @@ Em atendimento à seção obrigatória **"LGPD, PRIVACIDADE E SEGURANÇA NO BACK
 
 ## 9. Promoções e campanhas — evolução conceitual documentada (`RF-08`)
 
-Conforme permitido pelo roteiro (`p. 5`: *"Promoções/campanhas (ao menos como regra/documentação de como aplicar)"*) e priorizado na matriz da etapa 01 (`RF-08 = C`), as campanhas promocionais são especificadas conceitualmente abaixo como evolução direta do cálculo de preço do pedido, sem alterar as tabelas executáveis do MVP:
+Conforme permitido pelo roteiro (`p. 5`: *"Promoções/campanhas (ao menos como regra/documentação de como aplicar)"*), as campanhas promocionais são especificadas conceitualmente abaixo como evolução direta do cálculo de preço do pedido, sem alterar as tabelas executáveis do MVP:
 
 1. **Modelo conceitual (`CAMPANHA_PROMOCIONAL`):**
    - Atributos: `id`, `codigo`, `nome`, `unidade_id` (nulo = rede inteira; preenchido = campanha local da unidade), `canal_elegivel` (opcional: ex. `APP`, `WEB`), `tipo_desconto` (`PERCENTUAL_ITEM`, `VALOR_FIXO_PEDIDO`, `COMBO_PRODUTO`), `valor_beneficio`, `subtotal_minimo`, `vigencia_inicio`, `vigencia_fim`, `cumulativa_fidelidade` (`boolean`), `ativa`.

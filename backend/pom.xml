@@ -90,8 +90,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-flyway</artifactId>
-            <!-- A versão 4.1.0 está no cache local; alinhar com 4.1.2 quando o repositório estiver acessível. -->
-            <version>4.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>

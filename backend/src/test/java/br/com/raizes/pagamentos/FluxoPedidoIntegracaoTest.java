@@ -109,7 +109,11 @@ class FluxoPedidoIntegracaoTest {
         var pagamento = pagar(id, chave, "RECUSAR", cliente);
         assertEquals(200, pagamento.statusCode(), pagamento.body());
         assertEquals("RECUSADO", json(pagamento).path("statusPagamento").asText());
-        assertEquals("PAGAMENTO_RECUSADO", json(pagamento).path("statusPedido").asText());
+        assertEquals("CANCELADO", json(pagamento).path("statusPedido").asText());
+        assertEquals("Pagamento simulado recusado.", jdbc.queryForObject(
+                "SELECT motivo_cancelamento FROM pedido WHERE id = ?", String.class, id));
+        var detalhe = send("GET", "/api/v1/pedidos/" + id, null, cliente, null);
+        assertEquals("Pagamento simulado recusado.", json(detalhe).path("motivoCancelamento").asText());
         assertEquals(inicialCentro, saldo(1));
         assertEquals(1, movimentos(id, "LIBERACAO"));
         assertEquals(0, movimentos(id, "BAIXA"));
@@ -141,6 +145,7 @@ class FluxoPedidoIntegracaoTest {
         var resolvido = reconciliar(recusadoId, gerente);
         assertEquals(200, resolvido.statusCode(), resolvido.body());
         assertEquals("RECUSADO", json(resolvido).path("statusPagamento").asText());
+        assertEquals("CANCELADO", json(resolvido).path("statusPedido").asText());
         assertEquals(inicialCentro, saldo(1));
         assertEquals(1, movimentos(recusadoId, "LIBERACAO"));
         assertEquals(2, eventos(recusadoId));
@@ -242,18 +247,26 @@ class FluxoPedidoIntegracaoTest {
     void cancelamentoEExpiracaoLiberamSomentePedidoSemTentativa() throws Exception {
         String cliente = token("cliente@raizes.invalid");
         long cancelado = criar(cliente, "APP", 1);
+        assertEquals(900.0, jdbc.queryForObject(
+                "SELECT EXTRACT(EPOCH FROM (reserva_expira_em - criado_em)) FROM pedido WHERE id = ?",
+                Double.class, cancelado));
         var resposta = send("POST", "/api/v1/pedidos/" + cancelado + "/cancelamento",
                 "{\"motivo\":\"Desistencia\"}", cliente, null);
         assertEquals(200, resposta.statusCode(), resposta.body());
         assertTrue(json(resposta).path("reservaLiberada").asBoolean());
+        assertEquals("Desistencia", jdbc.queryForObject(
+                "SELECT motivo_cancelamento FROM pedido WHERE id = ?", String.class, cancelado));
         assertEquals(inicialCentro, saldo(1));
         assertEquals(1, movimentos(cancelado, "LIBERACAO"));
         erro(send("POST", "/api/v1/pedidos/" + cancelado + "/cancelamento", null, cliente, null),
                 409, "TRANSICAO_INVALIDA");
         erro(pagar(cancelado, UUID.randomUUID(), "APROVAR", cliente), 409, "TRANSICAO_INVALIDA");
         long expirado = criar(cliente, "APP", 1);
-        assertEquals(1, expiracao.expirarAte(Instant.now().plus(Duration.ofMinutes(31))));
+        assertEquals(0, expiracao.expirarAte(Instant.now().plus(Duration.ofMinutes(14))));
+        assertEquals(1, expiracao.expirarAte(Instant.now().plus(Duration.ofMinutes(16))));
         assertEquals("CANCELADO", jdbc.queryForObject("SELECT status FROM pedido WHERE id = ?", String.class, expirado));
+        assertEquals("Reserva expirou sem tentativa de pagamento.", jdbc.queryForObject(
+                "SELECT motivo_cancelamento FROM pedido WHERE id = ?", String.class, expirado));
         assertEquals(inicialCentro, saldo(1));
         assertEquals(1, movimentos(expirado, "LIBERACAO"));
         assertEquals(0, expiracao.expirarAte(Instant.now().plus(Duration.ofHours(2))));
